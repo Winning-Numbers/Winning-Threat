@@ -44,7 +44,7 @@ export const TransactionsProvider = ({ children }) => {
             String(last.transaction_id) !== String(newTx.transaction_id)
           ) {
             const updated = [...prev, newTx];
-            console.log("✅ Added new transaction:", newTx, "All:", updated);
+            console.log("Added new transaction:", newTx);
             return updated;
           }
 

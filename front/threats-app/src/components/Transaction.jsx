@@ -5,9 +5,6 @@ const Transaction = ({ transaction }) => {
 
     // Interpret possible model outputs
     if (p === true || p === 1 || p === "1") return true;
-    if (typeof p === "string") {
-      return p.toLowerCase().includes("fraud") || p.toLowerCase() === "true";
-    }
     return false;
   })();
 
@@ -44,7 +41,7 @@ const Transaction = ({ transaction }) => {
 
             {/* Merchant */}
             <p className="text-[#b5bac1] text-sm mb-2 truncate">
-              {transaction.merchant}
+              {transaction.merchant?.replace(/^fraud_/, '') || transaction.merchant}
             </p>
 
             {/* Location + time */}

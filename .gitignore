@@ -1,0 +1,39 @@
+# Large training data files
+*.csv
+ML/hackathon_train.csv
+
+# Model files (too large for git - train locally)
+ML/model.pkl
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Virtual Environment
+venv/
+env/
+back/env/
+.env
+.venv
+
+# Node modules
+node_modules/
+front/threats-app/node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# System
+.DS_Store
+Thumbs.db
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+

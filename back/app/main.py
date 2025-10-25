@@ -121,15 +121,61 @@ async def realtime(request: Request):
     return EventSourceResponse(event_generator())
 
 @app.get("/simulate_stream")
-async def simulate_stream():
-    return EventSourceResponse(
-        event_generator(),
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, OPTIONS",
-            "Access-Control-Allow-Headers": "*",
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "Content-Type": "text/event-stream",
-        },
-    )
+async def simulate_stream(request: Request, interval: float = 5.0, count: Optional[int] = 0):
+    """
+    SSE endpoint pentru test: emite 'count' tranzactii random la fiecare 'interval' secunde.
+    count = 0 -> emitere infinite (până clientul se deconectează).
+    Formatul fiecărui event este identic cu cel din `process_and_broadcast`:
+    {
+      "trans_num": "...",
+      "transaction": { ... },
+      "fraud": bool,
+      "score": float,
+      "flag_result": { ... }
+    }
+    """
+    merchants = ["ShopA", "ShopB", "PizzaPlace", "SkateShop", "MegaStore", "TestMerchant"]
+
+    async def generator():
+        sent = 0
+        while True:
+            if await request.is_disconnected():
+                break
+            if count and sent >= count:
+                break
+
+            # creează tranzacție random
+            trans_num = str(uuid.uuid4())[:8]
+            transaction = {
+                "trans_num": trans_num,
+                "amount": round(random.uniform(1.0, 2000.0), 2),
+                "merchant": random.choice(merchants),
+                "card_id": "CARD-" + str(random.randint(1000, 9999)),
+                "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            }
+
+            # simulăm răspuns ML
+            score = round(random.random(), 4)  # 0.0 - 1.0
+            fraud_bool = score > 0.85  # de ex. >85% e considerat fraudă
+
+            # simulăm flag_result
+            flag_result = {"simulated": True, "reported": fraud_bool}
+
+            event = {
+                "trans_num": trans_num,
+                "transaction": transaction,
+                "fraud": fraud_bool,
+                "score": score,
+                "flag_result": flag_result,
+            }
+
+            # trimite evenimentul exact ca în /realtime
+            yield {"event": "update", "data": json.dumps(event)}
+
+            sent += 1
+            try:
+                await asyncio.sleep(interval)
+            except asyncio.CancelledError:
+                break
+
+    return EventSourceResponse(generator())

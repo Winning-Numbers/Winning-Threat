@@ -15,7 +15,15 @@ export const TransactionsProvider = ({ children }) => {
         if (!res.ok) return; // skip if not ok
         const data = await res.json();
 
-        setTransactions([...transactions, data.transaction]);
+        setTransactions((prevTransactions) => {
+          const prev = prevTransactions[prevTransactions.length - 1];
+          
+          if (!prev || data.transaction.transaction_id != prev.transaction_id) {
+            return [...prevTransactions, data.transaction];
+          }
+          return prevTransactions;
+        });
+
         console.log("Noua tranzactie:", data);
       } catch (err) {
         console.error("Error fetching transaction:", err);

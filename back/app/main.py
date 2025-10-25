@@ -63,9 +63,9 @@ def flag_transaction(trans_num, flag_value):
 
 
 def get_ml_prediction(transaction):
-        response = requests.post(ML_URL, json=transaction, timeout=5)
-        response.raise_for_status()
-        data = response.json()
+        # response = requests.post(ML_URL, json=transaction, timeout=5)
+        # response.raise_for_status()
+        # data = response.json()
 
         prediction = random.choice([0, 1])
 

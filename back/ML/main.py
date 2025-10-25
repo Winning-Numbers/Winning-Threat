@@ -8,7 +8,7 @@ from .src.predict import predict
 def main():
 
     here = Path(__file__).resolve().parent          # .../Winning-Threat/ML
-    csv_path = (here / "data" / "new_raw.csv").resolve()
+    csv_path = (here / "hackathon_train.csv").resolve()
 
     
     data = load_data(str(csv_path))

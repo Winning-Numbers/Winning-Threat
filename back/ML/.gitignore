@@ -35,4 +35,5 @@ Thumbs.db
 **/raw.csv
 **/new_raw.csv
 training_data.pkl
-**/columns.json
+# columns.json is needed for Railway deployment
+!columns.json

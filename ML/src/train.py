@@ -17,34 +17,12 @@ def split_xy(x , y, config: TrainConfig = TrainConfig(target = "is_fraud")):
 
 
 def create_xgboost_model(x , y):
-    # Calculate class distribution
-    fraud_count = y.sum()
-    total_count = len(y)
-    legitimate_count = total_count - fraud_count
-    
-    print(f"📊 Class distribution:")
-    print(f"   Total: {total_count}")
-    print(f"   Fraud: {fraud_count} ({(fraud_count/total_count)*100:.2f}%)")
-    print(f"   Legitimate: {legitimate_count} ({(legitimate_count/total_count)*100:.2f}%)")
-    
-    # Only use scale_pos_weight if fraud is the minority class
-    # If fraud > 50%, it's actually the majority, so we need to balance the OTHER way
-    if fraud_count < legitimate_count:
-        # Fraud is minority - boost fraud class
-        scale_pos_weight = legitimate_count / fraud_count
-        print(f"   Boosting minority class (fraud): scale_pos_weight = {scale_pos_weight:.2f}")
-    else:
-        # Legitimate is minority - boost legitimate class by setting scale_pos_weight < 1
-        scale_pos_weight = legitimate_count / fraud_count
-        print(f"   Fraud is majority. scale_pos_weight = {scale_pos_weight:.4f}")
-    
     model = XGBClassifier(
         n_estimators=300,
         learning_rate=0.1,
         max_depth=6,
         subsample=0.8,
         colsample_bytree=0.8,
-        scale_pos_weight=scale_pos_weight,
         eval_metric="logloss",
         random_state=42,
         n_jobs=-1,

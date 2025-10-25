@@ -84,12 +84,6 @@ def preprocess_input_data(data: pd.DataFrame):
         "category"
         ], errors='ignore')
     
-    # Convert numeric columns from strings to float (for data from API/stream)
-    numeric_cols = ['lat', 'long', 'merch_lat', 'merch_long', 'city_pop', 'amt']
-    for col in numeric_cols:
-        if col in x.columns:
-            x[col] = pd.to_numeric(x[col], errors='coerce')
-    
     # Calculate age from date of birth
     x['dob'] = pd.to_datetime(x['dob'])
     today = pd.to_datetime(date.today())
@@ -243,9 +237,6 @@ def preprocess_data(data: pd.DataFrame, known_categories: dict = None):
 
     x = x.drop(columns=['trans_date' , 'unix_time' , 'trans_time' , 'trans_datetime'])
 
-    # IMPORTANT: Labels are inverted in the CSV! 
-    # CSV has: 0=fraud, 1=legitimate
-    # We need: 1=fraud, 0=legitimate
-    y = 1 - data["is_fraud"].astype('int64')
+    y = data["is_fraud"].astype('int64')
 
     return x, y

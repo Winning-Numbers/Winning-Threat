@@ -79,7 +79,7 @@ def get_ml_prediction(transaction):
     except Exception as e:
         # Dacă serverul ML e căzut -> mergem direct pe random
         prediction = random.choice([0, 1])
-        print(f"⚠️ ML prediction error: {e} → using random {prediction}")
+        # print(f"⚠️ ML prediction error: {e} → using random {prediction}")
         return prediction
 
 def stream_listener():

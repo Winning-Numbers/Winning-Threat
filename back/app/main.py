@@ -4,9 +4,11 @@ from fastapi import FastAPI, Request, BackgroundTasks, HTTPException, status
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 import httpx
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from fastapi.middleware.cors import CORSMiddleware
-
+import random
+import uuid
+import time
 app = FastAPI()
 
 app.add_middleware(
@@ -95,6 +97,10 @@ async def ingest(transaction: Transaction, background_tasks: BackgroundTasks):
 async def get_events(limit: int = 100):
     return EVENTS_HISTORY[-limit:]
 
+@app.get("/hello")
+def say_hello():
+    return {"message": "Hello, world"}
+
 @app.get("/realtime")
 async def realtime(request: Request):
     """
@@ -118,3 +124,63 @@ async def realtime(request: Request):
                 yield {"event": "ping", "data": json.dumps({"ts": asyncio.get_event_loop().time()})}
 
     return EventSourceResponse(event_generator())
+
+@app.get("/simulate_stream")
+async def simulate_stream(request: Request, interval: float = 5.0, count: Optional[int] = 0):
+    """
+    SSE endpoint pentru test: emite 'count' tranzactii random la fiecare 'interval' secunde.
+    count = 0 -> emitere infinite (până clientul se deconectează).
+    Formatul fiecărui event este identic cu cel din `process_and_broadcast`:
+    {
+      "trans_num": "...",
+      "transaction": { ... },
+      "fraud": bool,
+      "score": float,
+      "flag_result": { ... }
+    }
+    """
+    merchants = ["ShopA", "ShopB", "PizzaPlace", "SkateShop", "MegaStore", "TestMerchant"]
+
+    async def generator():
+        sent = 0
+        while True:
+            if await request.is_disconnected():
+                break
+            if count and sent >= count:
+                break
+
+            # creează tranzacție random
+            trans_num = str(uuid.uuid4())[:8]
+            transaction = {
+                "trans_num": trans_num,
+                "amount": round(random.uniform(1.0, 2000.0), 2),
+                "merchant": random.choice(merchants),
+                "card_id": "CARD-" + str(random.randint(1000, 9999)),
+                "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            }
+
+            # simulăm răspuns ML
+            score = round(random.random(), 4)  # 0.0 - 1.0
+            fraud_bool = score > 0.85  # de ex. >85% e considerat fraudă
+
+            # simulăm flag_result
+            flag_result = {"simulated": True, "reported": fraud_bool}
+
+            event = {
+                "trans_num": trans_num,
+                "transaction": transaction,
+                "fraud": fraud_bool,
+                "score": score,
+                "flag_result": flag_result,
+            }
+
+            # trimite evenimentul exact ca în /realtime
+            yield {"event": "update", "data": json.dumps(event)}
+
+            sent += 1
+            try:
+                await asyncio.sleep(interval)
+            except asyncio.CancelledError:
+                break
+
+    return EventSourceResponse(generator())

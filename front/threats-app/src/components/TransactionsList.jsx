@@ -14,12 +14,14 @@ const TransactionsList = () => {
             {transactions.length} Total
           </span>
         </div>
-        
+
         {transactions.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">📊</div>
             <p className="text-[#949ba4] text-lg">No transactions yet</p>
-            <p className="text-[#6d7178] text-sm mt-2">Transactions will appear here automatically</p>
+            <p className="text-[#6d7178] text-sm mt-2">
+              Transactions will appear here automatically
+            </p>
           </div>
         ) : (
           <div className="max-h-[75vh] overflow-y-auto pr-2 custom-scrollbar">

@@ -5,33 +5,63 @@ export const TransactionsContext = createContext();
 export const TransactionsProvider = ({ children }) => {
   const [transactions, setTransactions] = useState([]);
 
-  // Fetch the last transaction every 3 seconds
   useEffect(() => {
     const fetchTransaction = async () => {
       try {
         const res = await fetch(
           "https://winning-threat-production.up.railway.app/last_transaction"
         );
-        if (!res.ok) return; // skip if not ok
+
+        if (!res.ok) {
+          console.warn("Response not OK:", res.status);
+          return;
+        }
+
         const data = await res.json();
+        // data = { transaction: {...}, ml_prediction: ... }
 
-        setTransactions((prevTransactions) => {
-          const prev = prevTransactions[prevTransactions.length - 1];
-          
-          if (!prev || data.transaction.transaction_id != prev.transaction_id) {
-            return [...prevTransactions, data.transaction];
+        // build the shape we keep in state
+        const newTx = {
+          ...data.transaction,
+          ml_prediction: data.ml_prediction,
+        };
+
+        // sanity check
+        if (
+          !newTx ||
+          !newTx.transaction_id // must have id
+        ) {
+          console.warn("No valid transaction in response:", data);
+          return;
+        }
+
+        setTransactions((prev) => {
+          const last = prev[prev.length - 1];
+
+          // append only if it's new (ID changed)
+          if (
+            !last ||
+            String(last.transaction_id) !== String(newTx.transaction_id)
+          ) {
+            const updated = [...prev, newTx];
+            console.log("✅ Added new transaction:", newTx, "All:", updated);
+            return updated;
           }
-          return prevTransactions;
-        });
 
-        console.log("Noua tranzactie:", data);
+          // else keep same list
+          return prev;
+        });
       } catch (err) {
         console.error("Error fetching transaction:", err);
       }
     };
 
-    fetchTransaction(); // first call
+    // first fetch immediately
+    fetchTransaction();
+
+    // then poll every 1s
     const interval = setInterval(fetchTransaction, 1000);
+
     return () => clearInterval(interval);
   }, []);
 

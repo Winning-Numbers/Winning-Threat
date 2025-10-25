@@ -33,7 +33,7 @@ flag_headers = {"X-API-Key": API_KEY}
 
 # ===== Stocare in memorie =====
 QUEUE: asyncio.Queue = asyncio.Queue()
-EVENTS_HISTORY: list[Dict[str, Any]] = []  # pentru endpointul nou
+EVENTS_HISTORY: list[Dict[str, Any]] = [] 
 
 # ===== Model =====
 class Transaction(BaseModel):
@@ -104,6 +104,13 @@ async def get_history(limit: int = 20):
     Poți seta ?limit=50 pentru mai multe.
     """
     return EVENTS_HISTORY[-limit:]
+
+@app.get("/latest")
+async def get_latest_transaction():
+    """Returnează ultima tranzacție procesată."""
+    if not EVENTS_HISTORY:
+        return {"message": "Nu există tranzacții încă."}
+    return EVENTS_HISTORY[-1]
 
 @app.get("/realtime")
 async def realtime(request: Request):

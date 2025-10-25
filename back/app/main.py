@@ -2,6 +2,7 @@ import json
 import threading
 import requests
 import urllib3
+import random
 from fastapi import FastAPI
 from sseclient import SSEClient
 from fastapi.middleware.cors import CORSMiddleware
@@ -60,15 +61,26 @@ def flag_transaction(trans_num, flag_value):
         print(f"Error parsing response for transaction {trans_num}: {e}")
         return None
 
+
 def get_ml_prediction(transaction):
     try:
         response = requests.post(ML_URL, json=transaction, timeout=5)
         response.raise_for_status()
-        return response.json().get("is_fraud", 0)
-    
+        data = response.json()
+        prediction = data.get("is_fraud")
+
+        # Dacă modelul nu a returnat nimic valid -> fallback random
+        if prediction not in [0, 1]:
+            prediction = random.choice([0, 1])
+
+        print(f"🤖 ML prediction from server or random: {prediction}")
+        return prediction
+
     except Exception as e:
-        print(f"⚠️ ML prediction error: {e}")
-        return 0
+        # Dacă serverul ML e căzut -> mergem direct pe random
+        prediction = random.choice([0, 1])
+        print(f"⚠️ ML prediction error: {e} → using random {prediction}")
+        return prediction
 
 def stream_listener():
     global latest_transaction

@@ -1,4 +1,5 @@
 import asyncio
+import msgpack
 import json
 from fastapi import FastAPI, Request, BackgroundTasks, HTTPException, status
 from pydantic import BaseModel
@@ -7,6 +8,18 @@ import httpx
 from typing import Dict, Any
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[""],  # Allow all origins
+    allow_credentials=True,
+    allow_methods=[""],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all HTTP headers
+)
+
+@app.get("/")
+def read_root():
+    return {"message": "CORS is open to all origins!"}
 
 ML_URL = "http://localhost:5000/predict"   # ML service
 FLAG_URL = "https://95.217.75.14:8443/api/flag"  # extern service (listener could also call directly)

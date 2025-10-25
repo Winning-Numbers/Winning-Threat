@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import joblib
+from pathlib import Path
 from dataclasses import dataclass
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
@@ -27,3 +29,18 @@ def create_xgboost_model(x , y):
     )
     model.fit(x, y)
     return model
+
+
+def save_model(model, model_path: str = "ML/model.pkl"):
+    """Save trained model to disk.
+    
+    Parameters
+    ----------
+    model : Trained model
+        The trained XGBoost model to save.
+    model_path : str
+        Path where the model will be saved.
+    """
+    Path(model_path).parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump(model, model_path)
+    print(f"Model saved to {model_path}")

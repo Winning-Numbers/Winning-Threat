@@ -1,4 +1,3 @@
-
 import json
 import requests
 from sseclient import SSEClient
@@ -29,10 +28,17 @@ for event in client.events():
         continue
 
     trans_num = transaction.get("trans_num", "UNKNOWN")
-        
+    print(f"\n💳 New transaction received: {trans_num}")
+    print(json.dumps(transaction, indent=2))  # Afișează toate datele brute în consolă
+
     try:
         # Trimitem întreaga tranzacție (toate câmpurile) către FastAPI
         r = requests.post(BACKEND_INGEST_URL, json=transaction, timeout=10)
+
+        if r.status_code == 200:
+            print(f"✅ Sent successfully to FastAPI backend: {r.json()}")
+        else:
+            print(f"❌ Backend responded with {r.status_code}: {r.text}")
 
     except requests.RequestException as e:
         print(f"⚠️  Network error while sending to backend: {e}")

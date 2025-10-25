@@ -16,8 +16,8 @@ def main():
     x , y  = preprocess_data(data)
     x_train, x_test, y_train, y_test, scale_pos_weight = split_xy_balance(x , y)
     
-    # with open("ML/columns.json", "w") as f:
-    #     json.dump(list(x_train.columns), f)
+    with open("ML/columns.json", "w") as f:
+        json.dump(list(x_train.columns), f)
 
     xgb = create_xgboost_model(x_train , y_train , scale_pos_weight)
 

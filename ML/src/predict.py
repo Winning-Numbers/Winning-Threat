@@ -57,9 +57,7 @@ def predict(transaction_data: dict, model , th: float = 0.5) -> int:
     # Preprocess the data
     x = preprocess_input_data(data)
 
-    # Get columns.json path relative to this file
-    columns_path = Path(__file__).parent.parent / "columns.json"
-    with open(columns_path, "r") as f:
+    with open("ML/columns.json", "r") as f:
         expected_cols = json.load(f)
         
     x = x.reindex(columns=expected_cols, fill_value=0)

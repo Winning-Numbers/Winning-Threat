@@ -5,6 +5,7 @@ import urllib3
 import random
 from fastapi import FastAPI
 from sseclient import SSEClient
+from ML.src.predict import predict, load_model
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -20,6 +21,9 @@ headers = {"X-API-Key": API_KEY}
 # Variabilă globală pentru ultima tranzacție
 latest_transaction = None
 lock = threading.Lock()
+
+# Load model once at startup
+ml_model = None
 
 app = FastAPI(title="Fraud Detection API", version="1.0")
 
@@ -63,12 +67,13 @@ def flag_transaction(trans_num, flag_value):
 
 
 def get_ml_prediction(transaction):
-        # response = requests.post(ML_URL, json=transaction, timeout=5)
-        # response.raise_for_status()
-        # data = response.json()
-
-        prediction = random.choice([0, 1])
-
+        global ml_model
+        
+        # Load model only once (cached after first load)
+        if ml_model is None:
+            ml_model = load_model("ML/model.pkl")
+        
+        prediction = predict(transaction, ml_model)
         return prediction
 
 def stream_listener():
@@ -91,7 +96,7 @@ def stream_listener():
                 prediction = get_ml_prediction(transaction)
                 print(f"🤖 ML prediction for {transaction.get('trans_num')}: {prediction}")
 
-                print("flagging " + transaction["trans_num"] + " as " + str(prediction) + "very new")
+                print(f"🏴 Flagging {transaction['trans_num']} as {prediction}")
                 flag_transaction(transaction["trans_num"], prediction)
 
     except Exception as e:

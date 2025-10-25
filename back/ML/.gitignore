@@ -34,4 +34,7 @@ Thumbs.db
 
 **/raw.csv
 **/new_raw.csv
-**/columns.json
+
+# Allow model and columns for deployment
+!model.pkl
+!columns.json

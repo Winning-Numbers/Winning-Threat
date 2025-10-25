@@ -13,7 +13,7 @@ headers = {
 
 # === MAIN ===
 print("🚀 Connecting to external transaction stream...")
-response = requests.get(STREAM_URL, headers=headers, stream=True)
+response = requests.get(STREAM_URL, headers=headers, stream=True, verify=False)
 client = SSEClient(response)
 
 # === PROCESS LOOP ===

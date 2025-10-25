@@ -1,10 +1,9 @@
 import pandas as pd
 import numpy as np
-import joblib
-from pathlib import Path
 from dataclasses import dataclass
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
+import json
 
 @dataclass
 class TrainConfig:
@@ -16,31 +15,44 @@ def split_xy(x , y, config: TrainConfig = TrainConfig(target = "is_fraud")):
     return train_test_split(x, y, test_size=config.test_size, random_state=config.random_state)
 
 
-def create_xgboost_model(x , y):
+def create_xgboost_model(x , y , scale_pos_weight):
     model = XGBClassifier(
-        n_estimators=300,
-        learning_rate=0.1,
-        max_depth=6,
+        max_depth=6,              # începe cu 5–8
+        learning_rate=0.05,       # mic + early stopping
+        n_estimators=4000,        # mare, dar oprim devreme
         subsample=0.8,
         colsample_bytree=0.8,
-        eval_metric="logloss",
+        min_child_weight=5,       # ↑ dacă ai mult zgomot
+        gamma=0.0,                # 0–5 (mai mare = mai conservator)
+        reg_alpha=0.0,            # L1
+        reg_lambda=2.0,           # L2
+        max_bin=256,              # pentru hist/gpu_hist
+        grow_policy="depthwise",  # "lossguide" dacă vrei frunze multe
+        objective="binary:logistic",
+        eval_metric="aucpr",      # cheie la clase rare
+        scale_pos_weight=scale_pos_weight,
         random_state=42,
-        n_jobs=-1,
+        n_jobs=-1
     )
     model.fit(x, y)
     return model
 
+def split_xy_balance(x, y, test_size=0.2):
+    """Split data stratified and compute scale_pos_weight for XGBoost."""
+    x_train, x_test, y_train, y_test = train_test_split(
+        x, y, test_size=test_size, stratify=y, random_state=42
+    )
 
-def save_model(model, model_path: str = "ML/model.pkl"):
-    """Save trained model to disk.
-    
-    Parameters
-    ----------
-    model : Trained model
-        The trained XGBoost model to save.
-    model_path : str
-        Path where the model will be saved.
+    # raport negativ/pozitiv
+    neg, pos = np.bincount(y_train)
+    scale_pos_weight = neg / max(pos, 1)
+
+    return x_train, x_test, y_train, y_test, scale_pos_weight
+
+def predict_with_threshold(model , x , threshold: float = 0.5):
     """
-    Path(model_path).parent.mkdir(parents=True, exist_ok=True)
-    joblib.dump(model, model_path)
-    print(f"Model saved to {model_path}")
+    Turn predicted probabilities into class labels using a custom threshold.
+    Works for binary classifiers (proba for class 1 at [:, 1]).
+    """
+    proba = model.predict_proba(x)[:,1]
+    return (proba >= threshold).astype(int)

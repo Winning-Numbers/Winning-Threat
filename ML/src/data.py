@@ -84,8 +84,14 @@ def preprocess_input_data(data: pd.DataFrame):
         "category"
         ], errors='ignore')
     
+    # Convert numeric columns from strings to float (for data from API/stream)
+    numeric_cols = ['lat', 'long', 'merch_lat', 'merch_long', 'city_pop', 'amt']
+    for col in numeric_cols:
+        if col in x.columns:
+            x[col] = pd.to_numeric(x[col], errors='coerce')
+    
     # Calculate age from date of birth
-    x['dob'] = pd.to_datetime(x['dob'])
+    x['dob'] = pd.to_datetime(x['dob'], errors='coerce')
     today = pd.to_datetime(date.today())
     x['age'] = (today - x['dob']).dt.days // 365
     x = x.drop(columns=['dob'])

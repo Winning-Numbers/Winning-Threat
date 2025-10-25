@@ -80,6 +80,7 @@ def get_ml_prediction(transaction):
         
         # Fallback: if no model, predict fraud (95% of transactions are fraud anyway)
         if ml_model == "FALLBACK":
+            print("FALLBACK")
             return 1  # Always predict fraud when model missing
         
         prediction = predict(transaction, ml_model)

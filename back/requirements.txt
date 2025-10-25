@@ -3,3 +3,8 @@ uvicorn
 requests
 sseclient-py
 urllib3
+pandas
+numpy
+scikit-learn
+xgboost
+joblib

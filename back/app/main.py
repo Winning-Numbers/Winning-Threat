@@ -71,7 +71,16 @@ def get_ml_prediction(transaction):
         
         # Load model only once (cached after first load)
         if ml_model is None:
-            ml_model = load_model("ML/model.pkl")
+            try:
+                ml_model = load_model("ML/model.pkl")
+            except FileNotFoundError:
+                print("⚠️ WARNING: Model file not found. Using fallback prediction (always fraud).")
+                print("📋 To fix: Train model locally and upload ML/model.pkl to Railway")
+                ml_model = "FALLBACK"  # Marker for fallback mode
+        
+        # Fallback: if no model, predict fraud (95% of transactions are fraud anyway)
+        if ml_model == "FALLBACK":
+            return 1  # Always predict fraud when model missing
         
         prediction = predict(transaction, ml_model)
         return prediction

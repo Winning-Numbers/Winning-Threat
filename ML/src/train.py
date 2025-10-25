@@ -10,10 +10,10 @@ class TrainConfig:
     test_size: float = 0.2
     random_state: int = 42
 
-def split_xy(data: pd.DataFrame, config: TrainConfig):
-    X = data.drop(columns=[config.target])
+def split_xy(data: pd.DataFrame, config: TrainConfig = TrainConfig(target = "is_fraud")):
+    x = data.drop(columns=[config.target])
     y = data[config.target]
-    return train_test_split(X, y, test_size=config.test_size, random_state=config.random_state)
+    return train_test_split(x, y, test_size=config.test_size, random_state=config.random_state)
 
 @dataclass
 class RfModelConfig:

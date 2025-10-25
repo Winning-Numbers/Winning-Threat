@@ -1,16 +1,13 @@
 import Transaction from "./Transaction";
-import { useTransactions } from "../contexts/TransactionsContext";
+import { TransactionsContext } from "../contexts/TransactionsContext";
+import { useContext } from "react";
 
 const TransactionsList = () => {
-  const { transactions } = useTransactions();
+  const { transactions } = useContext(TransactionsContext);
 
-  return (
-    <div>
-      {transactions.map((t) => (
-        <Transaction key={t.id} id={t.id} name={t.name} category={t.category} />
-      ))}
-    </div>
-  );
+  return transactions.map((t) => (
+    <Transaction key={t.transaction_id} id={t.transaction_id} />
+  ));
 };
 
 export default TransactionsList;

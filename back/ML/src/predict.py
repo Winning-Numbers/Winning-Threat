@@ -57,10 +57,29 @@ def predict(transaction_data: dict, model , th: float = 0.5) -> int:
     # Preprocess the data
     x = preprocess_input_data(data)
 
-    # Get columns.json path relative to this file
+    # Get expected columns - try from file, fallback to model's feature names
     columns_path = Path(__file__).parent.parent / "columns.json"
-    with open(columns_path, "r") as f:
-        expected_cols = json.load(f)
+    try:
+        with open(columns_path, "r") as f:
+            expected_cols = json.load(f)
+    except FileNotFoundError:
+        # Get feature names from model if columns.json doesn't exist
+        if hasattr(model, 'feature_names_in_'):
+            expected_cols = list(model.feature_names_in_)
+        elif hasattr(model, 'get_booster'):
+            # XGBoost model
+            expected_cols = model.get_booster().feature_names
+        else:
+            # Use current columns as-is
+            expected_cols = list(x.columns)
+        
+        # Save for next time
+        try:
+            columns_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(columns_path, "w") as f:
+                json.dump(expected_cols, f)
+        except:
+            pass  # If we can't write, just continue
         
     x = x.reindex(columns=expected_cols, fill_value=0)
     

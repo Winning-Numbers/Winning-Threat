@@ -13,9 +13,9 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[""],  # Allow all origins
-    allow_credentials=True,
-    allow_methods=[""],  # Allow all HTTP methods
+    allow_origins=["*"],  # Allow all origins
+    allow_credentials=False,
+    allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all HTTP headers
 )
 
@@ -29,7 +29,6 @@ API_KEY = "076c309793d34b8f990d81a93c9e7c95503392ce2e6900dea21a5eaa39837419"
 flag_headers = {"X-API-Key": API_KEY}
 
 # In-memory storage (poți înlocui cu PostgreSQL)
-EVENTS_HISTORY = []  # listă de dicturi (ultimele N eventuri)
 QUEUE: asyncio.Queue = asyncio.Queue()
 
 class Transaction(BaseModel):
@@ -78,11 +77,6 @@ async def process_and_broadcast(transaction: Dict[str, Any]):
         "flag_result": flag_result,
     }
 
-    # păstrează istoric (limităm lungimea)
-    EVENTS_HISTORY.append(event)
-    if len(EVENTS_HISTORY) > 1000:
-        EVENTS_HISTORY.pop(0)
-
     # pune în coadă pentru SSE
     await QUEUE.put(event)
 
@@ -108,9 +102,6 @@ async def realtime(request: Request):
     Reconnect este automat de partea client.
     """
     async def event_generator():
-        # trimite ultimul istoric la conectare (opțional)
-        for e in EVENTS_HISTORY[-20:]:
-            yield {"event": "history", "data": json.dumps(e)}
         # apoi așteaptă evenimente noi
         while True:
             # dacă clientul s-a deconectat => stop

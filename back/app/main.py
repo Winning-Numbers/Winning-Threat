@@ -1,11 +1,11 @@
 import asyncio
-import msgpack
 import json
 from fastapi import FastAPI, Request, BackgroundTasks, HTTPException, status
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 import httpx
 from typing import Dict, Any
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 

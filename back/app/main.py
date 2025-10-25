@@ -79,6 +79,10 @@ async def process_and_broadcast(transaction: Dict[str, Any]):
 
     # pune în coadă pentru SSE
     await QUEUE.put(event)
+    
+@app.get("/test_cors")
+def test_cors():
+    return {"ok": True}
 
 @app.post("/ingest")
 async def ingest(transaction: Transaction, background_tasks: BackgroundTasks):

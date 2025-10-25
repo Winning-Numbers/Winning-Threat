@@ -91,6 +91,7 @@ def stream_listener():
                 prediction = get_ml_prediction(transaction)
                 print(f"🤖 ML prediction for {transaction.get('trans_num')}: {prediction}")
 
+                print("flagging" + transaction["trans_num"] + " as " + str(prediction))
                 flag_transaction(transaction["trans_num"], prediction)
 
     except Exception as e:

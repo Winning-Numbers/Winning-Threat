@@ -4,6 +4,7 @@ import requests
 import urllib3
 from fastapi import FastAPI
 from sseclient import SSEClient
+from fastapi.middleware.cors import CORSMiddleware
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -18,6 +19,14 @@ latest_transaction = None
 lock = threading.Lock()
 
 app = FastAPI(title="Fraud Detection API", version="1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # permite orice origine
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Funcția care ascultă stream-ul
 def stream_listener():

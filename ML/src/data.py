@@ -4,7 +4,14 @@ from datetime import date
 
 def load_data(file_path: str) -> pd.DataFrame:
     chunks = []
-    for chunk in pd.read_csv(file_path, chunksize=100_000):
+    for chunk in pd.read_csv(
+        file_path, 
+        sep='|',
+        chunksize=50_000,
+        engine='c',
+        low_memory=False,
+        on_bad_lines='warn'
+    ):
         chunks.append(chunk)
     return pd.concat(chunks, ignore_index=True)
 
@@ -45,6 +52,68 @@ def makeDistance(lat1, lon1, lat2, lon2):
     R = 6371.0  # Earth radius in kilometers
     dist = R * c
     return dist
+def preprocess_input_data(data: pd.DataFrame):
+    """Preprocess input data for model inference.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Raw input dataframe containing transaction data without the is_fraud column.
+
+    Returns
+    -------
+    x : pd.DataFrame
+        Preprocessed feature matrix ready for model inference.
+    """
+    x = data.drop(columns=[
+        "is_fraud",
+        "transaction_id" , 
+        "ssn" , 
+        "first" , 
+        "last" , 
+        "gender" , 
+        "cc_num" , 
+        "street" , 
+        "zip"  , 
+        "acct_num" , 
+        "trans_num" , 
+        "city" ,
+        "merchant",
+        "state",
+        "job",
+        "category"
+        ], errors='ignore')
+    
+    # Calculate age from date of birth
+    x['dob'] = pd.to_datetime(x['dob'])
+    today = pd.to_datetime(date.today())
+    x['age'] = (today - x['dob']).dt.days // 365
+    x = x.drop(columns=['dob'])
+    
+    # Convert lat and log into distance
+    x['distance'] = makeDistance(
+         x['lat'], x['long'], x['merch_lat'], x['merch_long']
+     )
+    x = x.drop(columns=['lat', 'long', 'merch_lat', 'merch_long'])
+    
+    # Log the city population
+    x['city_pop'] = np.log1p(x['city_pop']).astype('float32')
+    
+    # Make hour of the day
+    x['trans_date'] = x['trans_date'].astype(str)
+    x['trans_time'] = x['trans_time'].astype(str)
+    
+    x['trans_datetime'] = pd.to_datetime(
+        x['trans_date'] + ' ' + x['trans_time'],
+        errors='coerce'
+    )
+    x['hour'] = x['trans_datetime'].dt.hour
+    x['day_of_week'] = x['trans_datetime'].dt.dayofweek
+    x['is_weekend'] = (x['day_of_week'] >= 5).astype(int)
+
+    x = x.drop(columns=['trans_date' , 'unix_time' , 'trans_time' , 'trans_datetime'])
+
+    return x
 def _fit_onehot_categories(data: pd.DataFrame, columns: list) -> dict:
     """Return a dict mapping column -> sorted list of categories including 'Other'.
 
@@ -120,7 +189,9 @@ def preprocess_data(data: pd.DataFrame, known_categories: dict = None):
         "trans_num" , 
         "city" ,
         "merchant",
-        "profile"
+        "state",
+        "job",
+        "category"
         ], errors='ignore')
     
     # Calculate age from date of birth
@@ -129,40 +200,43 @@ def preprocess_data(data: pd.DataFrame, known_categories: dict = None):
     x['age'] = (today - x['dob']).dt.days // 365
     x = x.drop(columns=['dob'])
     
-    #Convert lat and log into distance
+    # #Convert lat and log into distance
     x['distance'] = makeDistance(
-        x['lat'], x['long'], x['merch_lat'], x['merch_long']
-    )
+         x['lat'], x['long'], x['merch_lat'], x['merch_long']
+     )
     x = x.drop(columns=['lat', 'long', 'merch_lat', 'merch_long'])
     
-    # One-hot encoding for categorical columns with 'Other' fallback
-    onehot_cols = ['state', 'job', 'merch_state']
-    if known_categories is None:
-        categories = _fit_onehot_categories(data, onehot_cols)
-    else:
-        categories = known_categories
+    # # One-hot encoding for categorical columns with 'Other' fallback
+    # onehot_cols = ['state' , 'job']
+    # if known_categories is None:
+    #     categories = _fit_onehot_categories(data, onehot_cols)
+    # else:
+    #     categories = known_categories
 
-    for col in onehot_cols:
-        dummies = _transform_onehot_with_other(x, col, categories.get(col, ['Other']))
-        # drop original column if present and concat dummies
-        if col in x.columns:
-            x = x.drop(columns=[col])
-        x = pd.concat([x, dummies], axis=1)
+    # for col in onehot_cols:
+    #     dummies = _transform_onehot_with_other(x, col, categories.get(col, ['Other']))
+    #     # drop original column if present and concat dummies
+    #     if col in x.columns:
+    #         x = x.drop(columns=[col])
+    #     x = pd.concat([x, dummies], axis=1)
     
     # Log the city population
-    x['city_pop'] = np.log1p(x['city_pop'])
+    x['city_pop'] = np.log1p(x['city_pop']).astype('float32')
     
     # Make hour of the day
-    x['hour'] = pd.to_datetime(x['trans_time']).dt.hour
+    x['trans_date'] = x['trans_date'].astype(str)
+    x['trans_time'] = x['trans_time'].astype(str)
     
-    # Make day of week
-    x['day_of_week'] = pd.to_datetime(x['trans_time']).dt.dayofweek
-
-    # Is weekend
+    x['trans_datetime'] = pd.to_datetime(
+        x['trans_date'] + ' ' + x['trans_time'],
+        errors='coerce'
+    )
+    x['hour'] = x['trans_datetime'].dt.hour
+    x['day_of_week'] = x['trans_datetime'].dt.dayofweek
     x['is_weekend'] = (x['day_of_week'] >= 5).astype(int)
-    
-    x = x.drop(columns=['trans_time' , 'unix_time'])
+
+    x = x.drop(columns=['trans_date' , 'unix_time' , 'trans_time' , 'trans_datetime'])
 
     y = data["is_fraud"].astype('int64')
 
-    return x, y, categories
+    return x, y

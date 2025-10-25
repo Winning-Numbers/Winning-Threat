@@ -32,4 +32,6 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-data/raw.csv
+**/raw.csv
+**/new_raw.csv
+**/columns.json

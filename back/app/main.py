@@ -2,6 +2,7 @@ import json
 import threading
 import requests
 import urllib3
+import random
 from fastapi import FastAPI
 from sseclient import SSEClient
 from fastapi.middleware.cors import CORSMiddleware
@@ -64,7 +65,7 @@ def get_ml_prediction(transaction):
     try:
         response = requests.post(ML_URL, json=transaction, timeout=5)
         response.raise_for_status()
-        return response.json().get("is_fraud", 0)
+        return response.json().get("is_fraud", random.choice([0, 1]))
     
     except Exception as e:
         print(f"⚠️ ML prediction error: {e}")

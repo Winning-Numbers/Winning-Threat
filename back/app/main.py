@@ -63,23 +63,12 @@ def flag_transaction(trans_num, flag_value):
 
 
 def get_ml_prediction(transaction):
-    try:
-        response = requests.post(ML_URL, json=transaction, timeout=5)
-        response.raise_for_status()
-        data = response.json()
-        prediction = data.get("is_fraud")
+        # response = requests.post(ML_URL, json=transaction, timeout=5)
+        # response.raise_for_status()
+        # data = response.json()
 
-        # Dacă modelul nu a returnat nimic valid -> fallback random
-        if prediction not in [0, 1]:
-            prediction = random.choice([0, 1])
-
-        print(f"🤖 ML prediction from server or random: {prediction}")
-        return prediction
-
-    except Exception as e:
-        # Dacă serverul ML e căzut -> mergem direct pe random
         prediction = random.choice([0, 1])
-        print(f"⚠️ ML prediction error: {e} → using random {prediction}")
+
         return prediction
 
 def stream_listener():
@@ -102,10 +91,8 @@ def stream_listener():
                 prediction = get_ml_prediction(transaction)
                 print(f"🤖 ML prediction for {transaction.get('trans_num')}: {prediction}")
 
-                # Dacă e fraudă -> trimite flag automat
-                if prediction == 1:
-                    flag_transaction(transaction["trans_num"], 1)
-                    print(f"🚨 Fraud flagged for transaction {transaction['trans_num']}")
+                print("flagging " + transaction["trans_num"] + " as " + str(prediction))
+                flag_transaction(transaction["trans_num"], prediction)
 
     except Exception as e:
         print(f"❌ Stream listener error: {e}")

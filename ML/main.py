@@ -23,7 +23,7 @@ def main():
 
     # run_randomized_search_f1(xgb , x_train , y_train)
 
-    th = 0.7  # custom threshold
+    th = 0.8  # custom threshold
 
     # accuracy = eval_accuracy(x_test , y_test , xgb , th)
     # print("Accuracy:", accuracy)

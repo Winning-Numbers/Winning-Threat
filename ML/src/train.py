@@ -17,23 +17,17 @@ def split_xy(x , y, config: TrainConfig = TrainConfig(target = "is_fraud")):
 
 def create_xgboost_model(x , y , scale_pos_weight):
     model = XGBClassifier(
-        max_depth=6,              # începe cu 5–8
-        learning_rate=0.05,       # mic + early stopping
-        n_estimators=4000,        # mare, dar oprim devreme
-        subsample=0.8,
-        colsample_bytree=0.8,
-        min_child_weight=5,       # ↑ dacă ai mult zgomot
-        gamma=0.0,                # 0–5 (mai mare = mai conservator)
-        reg_alpha=0.0,            # L1
-        reg_lambda=2.0,           # L2
-        max_bin=256,              # pentru hist/gpu_hist
-        grow_policy="depthwise",  # "lossguide" dacă vrei frunze multe
-        objective="binary:logistic",
-        eval_metric="aucpr",      # cheie la clase rare
-        scale_pos_weight=scale_pos_weight,
-        random_state=42,
-        n_jobs=-1
-    )
+    max_depth=9,
+    learning_rate=0.05,
+    n_estimators=200,
+    colsample_bytree=0.6,
+    gamma=1,
+    reg_lambda=2.0,
+    eval_metric="aucpr",
+    scale_pos_weight=scale_pos_weight,
+    random_state=42,
+    n_jobs=-1,
+)
     model.fit(x, y)
     return model
 

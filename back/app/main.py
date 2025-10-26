@@ -19,7 +19,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 STREAM_URL = "https://95.217.75.14:8443/stream"
 FLAG_URL = "https://95.217.75.14:8443/api/flag"
 ML_URL = "http://localhost:8001/predict"
-headers = {"X-API-Key": API_KEY}
+headers = {"API_KEY": API_KEY}
 
 # Variabilă globală pentru ultima tranzacție
 latest_transaction = None

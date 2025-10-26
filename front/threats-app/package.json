@@ -11,8 +11,12 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.16",
+    "date-fns": "^4.1.0",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.548.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "recharts": "^3.3.0",
     "tailwindcss": "^4.1.16"
   },
   "devDependencies": {

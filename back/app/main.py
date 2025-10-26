@@ -11,7 +11,7 @@ from .database import SessionLocal, init_db
 from .models import Transaction as TransactionModel
 import os
 
-API_KEY = os.getenv("API_KEY", "076c309793d34b8f990d81a93c9e7c95503392ce2e6900dea21a5eaa39837419")
+API_KEY = os.getenv("API_KEY")
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 

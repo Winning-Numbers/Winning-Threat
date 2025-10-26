@@ -25,7 +25,7 @@ const FraudChart = ({ transactions }) => {
         }
         
         intervals[key].total += 1;
-        const isFraud = transaction.is_fraud === 1 || transaction.merchant?.toLowerCase().includes('fraud');
+        const isFraud = transaction.ml_prediction === true || transaction.ml_prediction === 1 || transaction.ml_prediction === "1";
         if (isFraud) {
           intervals[key].fraud += 1;
         } else {
@@ -45,7 +45,7 @@ const FraudChart = ({ transactions }) => {
 
   if (data.length === 0) {
     return (
-      <div className="h-[300px] flex items-center justify-center text-slate-500">
+      <div className="h-[300px] flex items-center justify-center text-gray-400">
         <p>Waiting for transaction data...</p>
       </div>
     );
@@ -54,22 +54,22 @@ const FraudChart = ({ transactions }) => {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
         <XAxis 
           dataKey="time" 
-          stroke="#94a3b8" 
+          stroke="#6b7280" 
           style={{ fontSize: '12px' }}
         />
         <YAxis 
-          stroke="#94a3b8" 
+          stroke="#6b7280" 
           style={{ fontSize: '12px' }}
         />
         <Tooltip 
           contentStyle={{ 
-            backgroundColor: '#1e293b', 
-            border: '1px solid #334155',
+            backgroundColor: '#ffffff', 
+            border: '1px solid #e5e7eb',
             borderRadius: '6px',
-            color: '#fff'
+            color: '#111827'
           }}
         />
         <Legend 
@@ -79,21 +79,21 @@ const FraudChart = ({ transactions }) => {
           type="monotone" 
           dataKey="total" 
           stroke="#3b82f6" 
-          strokeWidth={2}
+          strokeWidth={2.5}
           name="Total Transactions"
         />
         <Line 
           type="monotone" 
           dataKey="fraud" 
-          stroke="#ef4444" 
-          strokeWidth={2}
+          stroke="#dc2626" 
+          strokeWidth={2.5}
           name="Fraud Detected"
         />
         <Line 
           type="monotone" 
           dataKey="legitimate" 
-          stroke="#10b981" 
-          strokeWidth={2}
+          stroke="#059669" 
+          strokeWidth={2.5}
           name="Legitimate"
         />
       </LineChart>

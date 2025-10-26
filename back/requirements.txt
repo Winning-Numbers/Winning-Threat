@@ -8,3 +8,6 @@ numpy
 scikit-learn
 xgboost
 joblib
+sqlalchemy
+psycopg2-binary
+python-dotenv

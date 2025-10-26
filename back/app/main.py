@@ -7,6 +7,8 @@ from fastapi import FastAPI
 from sseclient import SSEClient
 from ML.src.predict import predict, load_model
 from fastapi.middleware.cors import CORSMiddleware
+from .database import SessionLocal, init_db
+from .models import Transaction as TransactionModel
 
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -34,6 +36,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Initialize database on startup
+@app.on_event("startup")
+async def startup_event():
+    init_db()
+    print("✅ Database initialized")
 
 # Rulează ascultătorul de stream într-un thread separat    
 def flag_transaction(trans_num, flag_value):
@@ -114,6 +122,37 @@ def stream_listener():
 
                 print(f"🏴 Flagging {transaction['trans_num']} as {prediction}")
                 flag_transaction(transaction["trans_num"], prediction)
+                
+                # Save to database
+                try:
+                    db = SessionLocal()
+                    db_transaction = TransactionModel(
+                        trans_num=transaction.get("trans_num"),
+                        amt=transaction.get("amt"),
+                        city_pop=transaction.get("city_pop"),
+                        merchant=transaction.get("merchant"),
+                        category=transaction.get("category"),
+                        lat=transaction.get("lat"),
+                        long=transaction.get("long"),
+                        merch_lat=transaction.get("merch_lat"),
+                        merch_long=transaction.get("merch_long"),
+                        first=transaction.get("first"),
+                        last=transaction.get("last"),
+                        gender=transaction.get("gender"),
+                        dob=transaction.get("dob"),
+                        job=transaction.get("job"),
+                        trans_date=transaction.get("trans_date"),
+                        trans_time=transaction.get("trans_time"),
+                        unix_time=transaction.get("unix_time"),
+                        prediction=prediction,
+                        raw_data=transaction
+                    )
+                    db.add(db_transaction)
+                    db.commit()
+                    db.close()
+                    print(f"💾 Saved transaction {transaction['trans_num']} to database")
+                except Exception as e:
+                    print(f"❌ Error saving to database: {e}")
 
     except Exception as e:
         print(f"❌ Stream listener error: {e}")
@@ -140,3 +179,122 @@ def get_last_transaction():
 @app.get("/")
 def root():
     return {"message": "Fraud Detection API is running!"}
+
+@app.get("/transactions")
+def get_transactions(limit: int = 100, fraud_only: bool = False):
+    """Get list of transactions from database."""
+    db = SessionLocal()
+    query = db.query(TransactionModel)
+    
+    if fraud_only:
+        query = query.filter(TransactionModel.prediction == 1)
+    
+    transactions = query.order_by(TransactionModel.created_at.desc()).limit(limit).all()
+    db.close()
+    
+    return {
+        "success": True,
+        "count": len(transactions),
+        "transactions": [
+            {
+                "trans_num": t.trans_num,
+                "amt": t.amt,
+                "merchant": t.merchant,
+                "category": t.category,
+                "prediction": t.prediction,
+                "trans_date": t.trans_date,
+                "trans_time": t.trans_time,
+                "created_at": t.created_at.isoformat() if t.created_at else None
+            }
+            for t in transactions
+        ]
+    }
+
+@app.get("/transactions/{trans_num}")
+def get_transaction(trans_num: str):
+    """Get a specific transaction by trans_num."""
+    db = SessionLocal()
+    transaction = db.query(TransactionModel).filter(TransactionModel.trans_num == trans_num).first()
+    db.close()
+    
+    if not transaction:
+        return {"success": False, "message": "Transaction not found"}
+    
+    return {
+        "success": True,
+        "transaction": {
+            "trans_num": transaction.trans_num,
+            "amt": transaction.amt,
+            "merchant": transaction.merchant,
+            "category": transaction.category,
+            "prediction": transaction.prediction,
+            "raw_data": transaction.raw_data,
+            "created_at": transaction.created_at.isoformat() if transaction.created_at else None
+        }
+    }
+
+@app.get("/stats")
+def get_stats():
+    """Get fraud detection statistics."""
+    db = SessionLocal()
+    
+    total = db.query(TransactionModel).count()
+    fraud_count = db.query(TransactionModel).filter(TransactionModel.prediction == 1).count()
+    legitimate_count = total - fraud_count
+    
+    db.close()
+    
+    return {
+        "success": True,
+        "stats": {
+            "total_transactions": total,
+            "fraud_detected": fraud_count,
+            "legitimate": legitimate_count,
+            "fraud_rate": round((fraud_count / total * 100), 2) if total > 0 else 0
+        }
+    }
+
+@app.get("/time_period_inputs")
+def get_time_period_inputs(minutes: int = 5):
+    """Get transactions from the last X minutes with predictions.
+    
+    Args:
+        minutes: Time period in minutes (default: 5)
+    
+    Returns:
+        List of transactions with predictions from the specified time period
+    """
+    from datetime import datetime, timedelta, timezone
+    
+    db = SessionLocal()
+    
+    # Calculate the cutoff time
+    cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=minutes)
+    
+    # Query transactions from the last X minutes
+    transactions = db.query(TransactionModel).filter(
+        TransactionModel.created_at >= cutoff_time
+    ).order_by(TransactionModel.created_at.desc()).all()
+    
+    db.close()
+    
+    if not transactions:
+        return {
+            "success": False,
+            "message": f"No transactions found in the last {minutes} minutes"
+        }
+    
+    # Format like /last_transaction endpoint
+    return {
+        "success": True,
+        "time_period_minutes": minutes,
+        "count": len(transactions),
+        "transactions": [
+            {
+                "transaction": t.raw_data,
+                "ml_prediction": t.prediction
+            }
+            for t in transactions
+        ]
+    }
+    

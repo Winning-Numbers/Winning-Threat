@@ -123,36 +123,97 @@ def stream_listener():
                 print(f"🏴 Flagging {transaction['trans_num']} as {prediction}")
                 flag_transaction(transaction["trans_num"], prediction)
                 
-                # Save to database
-                try:
-                    db = SessionLocal()
-                    db_transaction = TransactionModel(
-                        trans_num=transaction.get("trans_num"),
-                        amt=transaction.get("amt"),
-                        city_pop=transaction.get("city_pop"),
-                        merchant=transaction.get("merchant"),
-                        category=transaction.get("category"),
-                        lat=transaction.get("lat"),
-                        long=transaction.get("long"),
-                        merch_lat=transaction.get("merch_lat"),
-                        merch_long=transaction.get("merch_long"),
-                        first=transaction.get("first"),
-                        last=transaction.get("last"),
-                        gender=transaction.get("gender"),
-                        dob=transaction.get("dob"),
-                        job=transaction.get("job"),
-                        trans_date=transaction.get("trans_date"),
-                        trans_time=transaction.get("trans_time"),
-                        unix_time=transaction.get("unix_time"),
-                        prediction=prediction,
-                        raw_data=transaction
-                    )
-                    db.add(db_transaction)
-                    db.commit()
-                    db.close()
-                    print(f"💾 Saved transaction {transaction['trans_num']} to database")
-                except Exception as e:
-                    print(f"❌ Error saving to database: {e}")
+                # Save to database (if available)
+
+
+                if SessionLocal is not None:
+
+
+                    try:
+
+
+                        db = SessionLocal()
+
+
+                        db_transaction = TransactionModel(
+
+
+                            trans_num=transaction.get("trans_num"),
+
+
+                            amt=transaction.get("amt"),
+
+
+                            city_pop=transaction.get("city_pop"),
+
+
+                            merchant=transaction.get("merchant"),
+
+
+                            category=transaction.get("category"),
+
+
+                            lat=transaction.get("lat"),
+
+
+                            long=transaction.get("long"),
+
+
+                            merch_lat=transaction.get("merch_lat"),
+
+
+                            merch_long=transaction.get("merch_long"),
+
+
+                            first=transaction.get("first"),
+
+
+                            last=transaction.get("last"),
+
+
+                            gender=transaction.get("gender"),
+
+
+                            dob=transaction.get("dob"),
+
+
+                            job=transaction.get("job"),
+
+
+                            trans_date=transaction.get("trans_date"),
+
+
+                            trans_time=transaction.get("trans_time"),
+
+
+                            unix_time=transaction.get("unix_time"),
+
+
+                            prediction=prediction,
+
+
+                            raw_data=transaction
+
+
+                        )
+
+
+                        db.add(db_transaction)
+
+
+                        db.commit()
+
+
+                        db.close()
+
+
+                        print(f"💾 Saved transaction {transaction['trans_num']} to database")
+
+
+                    except Exception as e:
+
+
+                        print(f"❌ Error saving to database: {e}")
 
     except Exception as e:
         print(f"❌ Stream listener error: {e}")
@@ -183,6 +244,8 @@ def root():
 @app.get("/transactions")
 def get_transactions(limit: int = 100, fraud_only: bool = False):
     """Get list of transactions from database."""
+    if SessionLocal is None:
+        return {"success": False, "message": "Database not configured"}
     db = SessionLocal()
     query = db.query(TransactionModel)
     
@@ -213,6 +276,8 @@ def get_transactions(limit: int = 100, fraud_only: bool = False):
 @app.get("/transactions/{trans_num}")
 def get_transaction(trans_num: str):
     """Get a specific transaction by trans_num."""
+    if SessionLocal is None:
+        return {"success": False, "message": "Database not configured"}
     db = SessionLocal()
     transaction = db.query(TransactionModel).filter(TransactionModel.trans_num == trans_num).first()
     db.close()
@@ -236,6 +301,10 @@ def get_transaction(trans_num: str):
 @app.get("/stats")
 def get_stats():
     """Get fraud detection statistics."""
+    if SessionLocal is None:
+
+
+        return {"success": False, "message": "Database not configured"}
     db = SessionLocal()
     
     total = db.query(TransactionModel).count()
@@ -265,6 +334,11 @@ def get_time_period_inputs(minutes: int = 5):
         List of transactions with predictions from the specified time period
     """
     from datetime import datetime, timedelta, timezone
+    
+    if SessionLocal is None:
+
+
+        return {"success": False, "message": "Database not configured"}
     
     db = SessionLocal()
     

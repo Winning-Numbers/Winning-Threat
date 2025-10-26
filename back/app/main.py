@@ -16,7 +16,6 @@ API_KEY = os.getenv("API_KEY")
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # API config
-API_KEY = "076c309793d34b8f990d81a93c9e7c95503392ce2e6900dea21a5eaa39837419"
 STREAM_URL = "https://95.217.75.14:8443/stream"
 FLAG_URL = "https://95.217.75.14:8443/api/flag"
 ML_URL = "http://localhost:8001/predict"

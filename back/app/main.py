@@ -83,7 +83,13 @@ def get_ml_prediction(transaction):
             print("FALLBACK")
             return 1  # Always predict fraud when model missing
         
-        prediction = predict(transaction, ml_model) * -1
+        prediction = predict(transaction, ml_model)
+        
+        if (prediction == 1):
+            prediction = 0
+        elif (prediction == 0):
+            prediction = 1
+            
         return prediction
 
 def stream_listener():
